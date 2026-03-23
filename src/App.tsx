@@ -261,13 +261,22 @@ export default function App() {
         const issuesRes = await fetch(gasUrl);
         if (issuesRes.ok) {
           const data = await issuesRes.json();
-          // Parse dates
-          const parsedIssues = data.map((i: any) => ({
-            ...i,
-            dateReported: new Date(i.dateReported)
-          }));
-          setIssues(parsedIssues);
-          setSyncError(null);
+          
+          if (Array.isArray(data)) {
+            // Parse dates
+            const parsedIssues = data.map((i: any) => ({
+              ...i,
+              dateReported: new Date(i.dateReported)
+            }));
+            setIssues(parsedIssues);
+            setSyncError(null);
+          } else if (data && data.error) {
+            console.error("Google Apps Script Error:", data.error);
+            setSyncError(`Script Error: ${data.error}`);
+          } else {
+            console.error("Unexpected response format:", data);
+            setSyncError("Received unexpected data format from Google Apps Script.");
+          }
         } else {
           setSyncError(`Failed to load data (HTTP ${issuesRes.status}). Check if the Web App is deployed to 'Anyone'.`);
         }
