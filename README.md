@@ -9,7 +9,7 @@ To connect this app to your own Google Sheet, follow these steps:
 ### 1. Create a Google Sheet
 1. Go to [Google Sheets](https://sheets.google.com) and create a new spreadsheet.
 2. Name the first sheet exactly **Issues** (case-sensitive).
-3. Add the following headers in the first row (A1 to H1):
+3. Add the following headers in the first row (A1 to I1):
    - `id`
    - `title`
    - `outlet`
@@ -18,6 +18,7 @@ To connect this app to your own Google Sheet, follow these steps:
    - `status`
    - `notes`
    - `timeLimitDays`
+   - `photo`
 
 ### 2. Add the Google Apps Script
 1. In your Google Sheet, click on **Extensions** > **Apps Script**.
@@ -78,7 +79,8 @@ function doPost(e) {
         issue.dateReported,
         issue.status,
         issue.notes,
-        issue.timeLimitDays
+        issue.timeLimitDays,
+        issue.photo || ""
       ]);
     } else if (data.action === 'resolve') {
       const values = sheet.getDataRange().getValues();
