@@ -15,7 +15,11 @@ import {
   Box,
   Activity,
   Database,
-  Settings
+  Settings,
+  X,
+  Trash2,
+  Camera,
+  XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -39,10 +43,11 @@ interface Issue {
   status: Status;
   notes: string;
   timeLimitDays: number;
+  photo?: string;
 }
 
 // --- Constants & Mock Data ---
-const OUTLETS = ['Outlet 1', 'Outlet 2', 'Outlet 3', 'Outlet 4', 'Outlet 5', 'Outlet 6', 'Outlet 7'];
+const OUTLETS = ['Sandakan Prima', 'Sandakan Megah', 'Lahad Datu Nipah', 'Lahad Datu Perdana', 'Tawau', 'Tawau Bintang', 'Semporna'] as const;
 const REASONS: Reason[] = ['Damaged', 'Amendment', 'Missing', 'Transfer', 'Other'];
 const TIME_LIMITS = [
   { label: '1 Day', value: 1 },
@@ -233,6 +238,7 @@ export default function App() {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isConfigured, setIsConfigured] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Add Form State
   const [newTitle, setNewTitle] = useState('');
@@ -240,6 +246,7 @@ export default function App() {
   const [newReason, setNewReason] = useState<Reason>(REASONS[0]);
   const [newNotes, setNewNotes] = useState('');
   const [newTimeLimit, setNewTimeLimit] = useState<number>(7);
+  const [newPhoto, setNewPhoto] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const checkStatusAndFetch = async () => {
@@ -260,9 +267,13 @@ export default function App() {
             dateReported: new Date(i.dateReported)
           }));
           setIssues(parsedIssues);
+          setSyncError(null);
+        } else {
+          setSyncError(`Failed to load data (HTTP ${issuesRes.status}). Check if the Web App is deployed to 'Anyone'.`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch data", error);
+        setSyncError(`Connection error: ${error.message}. Check CORS or Web App URL.`);
       } finally {
         setIsLoading(false);
       }
@@ -281,15 +292,69 @@ export default function App() {
     if (!gasUrl) return;
 
     try {
-      await fetch(gasUrl, { 
+      const res = await fetch(gasUrl, { 
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'resolve', id })
       });
-    } catch (error) {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSyncError(null);
+    } catch (error: any) {
       console.error("Failed to resolve issue", error);
+      setSyncError(`Failed to sync resolve: ${error.message}`);
       // Revert on failure could be implemented here
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    // Optimistic update
+    setIssues(issues.filter(issue => issue.id !== id));
+
+    const gasUrl = import.meta.env.VITE_GAS_URL;
+    if (!gasUrl) return;
+
+    try {
+      const res = await fetch(gasUrl, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', id })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSyncError(null);
+    } catch (error: any) {
+      console.error("Failed to delete issue", error);
+      setSyncError(`Failed to sync delete: ${error.message}`);
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        setNewPhoto(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddIssue = async (e: React.FormEvent) => {
@@ -305,6 +370,7 @@ export default function App() {
       status: 'Pending',
       notes: newNotes,
       timeLimitDays: newTimeLimit,
+      photo: newPhoto,
     };
 
     // Optimistic update
@@ -313,6 +379,7 @@ export default function App() {
     setNewTitle('');
     setNewNotes('');
     setNewOutlet(OUTLETS[0]);
+    setNewPhoto(undefined);
     setNewReason(REASONS[0]);
     setNewTimeLimit(7);
 
@@ -320,7 +387,7 @@ export default function App() {
     if (!gasUrl) return;
 
     try {
-      await fetch(gasUrl, {
+      const res = await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -331,8 +398,11 @@ export default function App() {
           }
         })
       });
-    } catch (error) {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSyncError(null);
+    } catch (error: any) {
       console.error("Failed to add issue", error);
+      setSyncError(`Failed to sync new issue: ${error.message}. Is the Apps Script deployed to 'Anyone'?`);
     }
   };
 
@@ -428,6 +498,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800 relative overflow-hidden">
       <div className="relative z-10 max-w-3xl mx-auto min-h-screen flex flex-col">
+        {syncError && (
+          <div className="bg-red-50 border-b border-red-200 p-4 flex items-start gap-3 text-red-700 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Sync Error</p>
+              <p>{syncError}</p>
+            </div>
+            <button onClick={() => setSyncError(null)} className="ml-auto p-1 hover:bg-red-100 rounded-lg">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         {/* App Bar */}
         <header className="px-6 py-6 flex items-center justify-between relative">
           <div className="flex items-center gap-3 z-10">
@@ -435,7 +517,32 @@ export default function App() {
           </div>
           
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">PendIt</h1>
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ y: [0, -6, 0], rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="text-2xl"
+              >
+                <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
+                  <g transform="translate(0, 5)">
+                    <path d="M25 60 C 25 85, 75 85, 75 60 C 75 40, 65 30, 50 30 C 35 30, 25 40, 25 60 Z" fill="#FFD700" />
+                    <circle cx="50" cy="35" r="20" fill="#FFD700" />
+                    <circle cx="42" cy="30" r="4" fill="#000" />
+                    <circle cx="58" cy="30" r="4" fill="#000" />
+                    <circle cx="41" cy="29" r="1.5" fill="#FFF" />
+                    <circle cx="57" cy="29" r="1.5" fill="#FFF" />
+                    <circle cx="35" cy="35" r="3" fill="#FF9999" opacity="0.6" />
+                    <circle cx="65" cy="35" r="3" fill="#FF9999" opacity="0.6" />
+                    <path d="M40 40 Q 50 45 60 40 Q 50 50 40 40 Z" fill="#FF8C00" />
+                    <path d="M25 55 C 15 55, 15 75, 25 70 Z" fill="#FFC000" />
+                    <path d="M75 55 C 85 55, 85 75, 75 70 Z" fill="#FFC000" />
+                  </g>
+                </svg>
+              </motion.div>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">
+                PendIt <span className="text-sm font-medium text-gray-400 tracking-normal ml-1">by yung</span>
+              </h1>
+            </div>
             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest mt-0.5">Inventory</p>
           </div>
 
@@ -541,6 +648,32 @@ export default function App() {
                       onChange={setNewNotes} 
                       multiline 
                     />
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-bold text-gray-700 ml-1">Photo (Optional)</label>
+                      {newPhoto ? (
+                        <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-gray-100">
+                          <img src={newPhoto} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => setNewPhoto(undefined)}
+                            className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl hover:bg-gray-50 hover:border-indigo-400 transition-all cursor-pointer group">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="w-10 h-10 mb-2 rounded-full bg-indigo-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <Camera className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <p className="text-sm text-gray-500 font-medium">Tap to add photo</p>
+                          </div>
+                          <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                        </label>
+                      )}
+                    </div>
                     
                     <div className="mt-8">
                       <button 
@@ -674,6 +807,11 @@ export default function App() {
                                     {statusText}
                                   </span>
                                 </div>
+                                {issue.photo && (
+                                  <div className="mt-3 rounded-xl overflow-hidden border border-gray-100 max-h-48">
+                                    <img src={issue.photo} alt="Issue" className="w-full h-full object-cover" />
+                                  </div>
+                                )}
                               </div>
 
                               {issue.status === 'Pending' ? (
@@ -684,9 +822,13 @@ export default function App() {
                                   <CheckCircle2 className="w-5 h-5" />
                                 </button>
                               ) : (
-                                <div className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-emerald-500 bg-emerald-50 border border-emerald-100">
-                                  <CheckCircle2 className="w-5 h-5" />
-                                </div>
+                                <button 
+                                  onClick={() => handleDelete(issue.id)}
+                                  className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 transition-all pointer-events-auto"
+                                  title="Delete from history"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
                               )}
                             </Card>
                           </motion.div>
