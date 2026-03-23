@@ -1,0 +1,5 @@
+{
+  "name": "PendIt",
+  "description": "Track and manage pending stock issues across 7 outlets to prevent stock loss.",
+  "requestFramePermissions": []
+}
