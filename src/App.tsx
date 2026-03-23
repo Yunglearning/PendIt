@@ -47,7 +47,7 @@ interface Issue {
 }
 
 // --- Constants & Mock Data ---
-const OUTLETS = ['Sandakan Prima', 'Sandakan Megah', 'Lahad Datu Nipah', 'Lahad Datu Perdana', 'Tawau', 'Tawau Bintang', 'Semporna'] as const;
+const OUTLETS = ['Store A', 'Store B', 'Store C', 'Store D', 'Warehouse'] as const;
 const REASONS: Reason[] = ['Damaged', 'Amendment', 'Missing', 'Transfer', 'Other'];
 const TIME_LIMITS = [
   { label: '1 Day', value: 1 },
@@ -388,9 +388,9 @@ export default function App() {
     setNewTitle('');
     setNewNotes('');
     setNewOutlet(OUTLETS[0]);
-    setNewPhoto(undefined);
     setNewReason(REASONS[0]);
     setNewTimeLimit(7);
+    setNewPhoto(undefined);
 
     const gasUrl = import.meta.env.VITE_GAS_URL;
     if (!gasUrl) return;
@@ -532,24 +532,20 @@ export default function App() {
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 className="text-2xl"
               >
-                <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
-                  <g transform="translate(0, 5)">
-                    <path d="M25 60 C 25 85, 75 85, 75 60 C 75 40, 65 30, 50 30 C 35 30, 25 40, 25 60 Z" fill="#FFD700" />
-                    <circle cx="50" cy="35" r="20" fill="#FFD700" />
-                    <circle cx="42" cy="30" r="4" fill="#000" />
-                    <circle cx="58" cy="30" r="4" fill="#000" />
-                    <circle cx="41" cy="29" r="1.5" fill="#FFF" />
-                    <circle cx="57" cy="29" r="1.5" fill="#FFF" />
-                    <circle cx="35" cy="35" r="3" fill="#FF9999" opacity="0.6" />
-                    <circle cx="65" cy="35" r="3" fill="#FF9999" opacity="0.6" />
-                    <path d="M40 40 Q 50 45 60 40 Q 50 50 40 40 Z" fill="#FF8C00" />
-                    <path d="M25 55 C 15 55, 15 75, 25 70 Z" fill="#FFC000" />
-                    <path d="M75 55 C 85 55, 85 75, 75 70 Z" fill="#FFC000" />
+                <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-md">
+                  <g transform="translate(5, 10)">
+                    <path d="M20,60 Q20,85 50,85 Q80,85 85,60 Q85,45 65,45 Q45,45 20,60 Z" fill="#FFD13B"/>
+                    <path d="M80,60 Q95,50 85,40 Q80,50 75,55 Z" fill="#FFD13B"/>
+                    <circle cx="35" cy="35" r="22" fill="#FFD13B"/>
+                    <circle cx="28" cy="30" r="4" fill="#1A1A1A"/>
+                    <circle cx="26" cy="28" r="1.5" fill="#FFFFFF"/>
+                    <path d="M14,35 Q2,35 5,42 Q15,45 18,40 Z" fill="#FF9800"/>
+                    <path d="M40,60 Q55,75 70,60 Q55,55 40,60 Z" fill="#FBC02D"/>
                   </g>
                 </svg>
               </motion.div>
               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">
-                PendIt <span className="text-sm font-medium text-gray-400 tracking-normal ml-1">by yung</span>
+                PendIt
               </h1>
             </div>
             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest mt-0.5">Inventory</p>
