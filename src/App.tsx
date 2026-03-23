@@ -47,7 +47,7 @@ interface Issue {
 }
 
 // --- Constants & Mock Data ---
-const OUTLETS = ['Store A', 'Store B', 'Store C', 'Store D', 'Warehouse'] as const;
+const OUTLETS = ['Sandakan Prima', 'Sandakan Megah', 'Lahad Datu Nipah', 'Lahad Datu Perdana', 'Tawau', 'Tawau Bintang', 'Semporna'] as const;
 const REASONS: Reason[] = ['Damaged', 'Amendment', 'Missing', 'Transfer', 'Other'];
 const TIME_LIMITS = [
   { label: '1 Day', value: 1 },
@@ -61,7 +61,7 @@ const INITIAL_ISSUES: Issue[] = [
   {
     id: '1',
     title: 'Broken Monitor',
-    outlet: 'Outlet 3',
+    outlet: 'Lahad Datu Nipah',
     reason: 'Damaged',
     dateReported: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
     status: 'Pending',
@@ -71,7 +71,7 @@ const INITIAL_ISSUES: Issue[] = [
   {
     id: '2',
     title: 'Stock Count Mismatch',
-    outlet: 'Outlet 1',
+    outlet: 'Sandakan Prima',
     reason: 'Amendment',
     dateReported: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     status: 'Pending',
@@ -81,7 +81,7 @@ const INITIAL_ISSUES: Issue[] = [
   {
     id: '3',
     title: 'Missing Keyboard',
-    outlet: 'Outlet 5',
+    outlet: 'Tawau',
     reason: 'Missing',
     dateReported: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     status: 'Pending',
@@ -91,7 +91,7 @@ const INITIAL_ISSUES: Issue[] = [
   {
     id: '4',
     title: 'Wrong Item Delivered',
-    outlet: 'Outlet 2',
+    outlet: 'Sandakan Megah',
     reason: 'Transfer',
     dateReported: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
     status: 'Pending',
